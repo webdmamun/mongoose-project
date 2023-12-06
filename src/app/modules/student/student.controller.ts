@@ -1,17 +1,24 @@
 import { Request, Response } from 'express';
+import studentValidationSchema from './student.validation';
 import { StudentServices } from './student.service';
 
 const createStudent = async (req: Request, res: Response) => {
   try {
     const { student: studentData } = req.body;
-    const result = await StudentServices.createStudentIntoDb(studentData);
+    const zodParsedData = studentValidationSchema.parse(studentData);
+    const result = await StudentServices.createStudentIntoDb(zodParsedData);
     res.status(200).json({
       success: true,
       message: 'Student Created Successfully',
       data: result,
     });
-  } catch (err) {
-    console.log(err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || 'something went wrong',
+      error: err,
+    });
   }
 
   // it wil call service function to send this data.
