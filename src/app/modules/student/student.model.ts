@@ -5,9 +5,7 @@ import {
   TStudent,
   StudentModel,
   TUserName,
-} from './student/student.interface';
-import bcrypt from 'bcrypt';
-import config from '../config';
+} from './student.interface';
 
 const userNameSchema = new Schema<TUserName>({
   firstName: {
@@ -74,10 +72,13 @@ const localGuradianSchema = new Schema<TLocalGuardian>({
 const studentSchema = new Schema<TStudent, StudentModel>(
   {
     id: { type: String, required: [true, 'Id is required'], unique: true },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User is required'],
+      unique: true,
     },
+
     name: {
       type: userNameSchema,
       required: true,
@@ -91,7 +92,7 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       },
       required: true,
     },
-    dateOfBirth: { type: String },
+    dateOfBirth: { type: Date },
     email: {
       type: String,
       required: true,
@@ -115,12 +116,7 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       required: true,
     },
     profileImg: { type: String },
-    isActive: {
-      type: String,
-      enum: ['active', 'blocked'],
-      required: true,
-      default: 'active',
-    },
+
     isDeleted: {
       type: Boolean,
       default: false,
@@ -136,26 +132,6 @@ const studentSchema = new Schema<TStudent, StudentModel>(
 // virtual
 studentSchema.virtual('fullName').get(function () {
   return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
-});
-
-// pre save middleware /  hook : will work on create() save()
-studentSchema.pre('save', async function (next) {
-  // console.log(this, 'pre save middleware');
-  // hasing password and save into db
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const user = this; // this refering current proccessing document
-  user.password = await bcrypt.hash(
-    user.password,
-    Number(config.bcrypt_salt_rounds),
-  );
-  next();
-});
-
-// post save middleware /  hook
-studentSchema.post('save', function (doc, next) {
-  doc.password = '';
-
-  next();
 });
 
 //query meddleware
